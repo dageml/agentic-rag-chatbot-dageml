@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RAG Chatbot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tiempos+Headline:wght@400;500&family=Söhne:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange:       #D4622A;
+      --orange-light: #E8845A;
+      --orange-dim:   #F2C4A8;
+      --cream:        #FAF7F2;
+      --warm-white:   #FFFDF9;
+      --charcoal:     #1A1714;
+      --mid:          #6B6560;
+      --border:       #E8E2DA;
+      --sidebar-bg:   #F5F0EA;
+      --chat-bg:      #FFFDF9;
+      --bubble-user:  #D4622A;
+      --bubble-bot:   #FFFFFF;
+      --shadow:       0 1px 3px rgba(26,23,20,0.08), 0 4px 16px rgba(26,23,20,0.04);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--charcoal);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      animation: slideIn 0.4s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(-20px); opacity: 0; }
+      to   { transform: translateX(0);     opacity: 1; }
+    }
+
+    .sidebar-header {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--orange);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-mark svg { width: 18px; height: 18px; fill: white; }
+
+    .logo-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--charcoal);
+      letter-spacing: -0.3px;
+    }
+
+    .logo-tagline {
+      font-size: 11.5px;
+      color: var(--mid);
+      letter-spacing: 0.3px;
+      margin-left: 42px;
+    }
+
+    /* Upload section */
+    .sidebar-section {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--mid);
+      margin-bottom: 12px;
+    }
+
+    .upload-zone {
+      border: 1.5px dashed var(--orange-dim);
+      border-radius: 10px;
+      padding: 18px 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(212,98,42,0.03);
+      position: relative;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--orange);
+      background: rgba(212,98,42,0.06);
+    }
+
+    .upload-zone.drag-over {
+      border-color: var(--orange);
+      background: rgba(212,98,42,0.1);
+      transform: scale(1.01);
+    }
+
+    .upload-icon {
+      width: 28px;
+      height: 28px;
+      margin: 0 auto 8px;
+      background: var(--orange-dim);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-icon svg { width: 14px; height: 14px; stroke: var(--orange); fill: none; stroke-width: 2; }
+
+    .upload-text {
+      font-size: 12.5px;
+      color: var(--charcoal);
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .upload-sub {
+      font-size: 11px;
+      color: var(--mid);
+    }
+
+    #fileInput { display: none; }
+
+    .upload-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 9px;
+      background: var(--orange);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      display: none;
+    }
+
+    .upload-btn:hover { background: #C0561F; }
+    .upload-btn:active { transform: scale(0.98); }
+    .upload-btn.visible { display: block; }
+
+    .upload-status {
+      margin-top: 10px;
+      font-size: 12px;
+      min-height: 16px;
+      color: var(--mid);
+      text-align: center;
+    }
+
+    .upload-status.success { color: #2D7A4F; }
+    .upload-status.error   { color: #C0351F; }
+
+    /* Doc list */
+    .doc-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 24px;
+    }
+
+    .doc-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      background: white;
+      border: 1px solid var(--border);
+      animation: fadeUp 0.3s ease;
+    }
+
+    @keyframes fadeUp {
+      from { transform: translateY(6px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+
+    .doc-icon {
+      width: 28px; height: 28px;
+      background: var(--orange-dim);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .doc-icon svg { width: 13px; height: 13px; stroke: var(--orange); fill: none; stroke-width: 2; }
+
+    .doc-name {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--charcoal);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .doc-size { font-size: 11px; color: var(--mid); }
+
+    /* Memory pill */
+    .memory-badge {
+      margin: 0 24px 20px;
+      padding: 10px 14px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 11.5px;
+      color: var(--mid);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .memory-dot {
+      width: 6px; height: 6px;
+      background: var(--orange);
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ── MAIN CHAT ── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--chat-bg);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--warm-white);
+    }
+
+    .chat-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--charcoal);
+      letter-spacing: -0.3px;
+    }
+
+    .chat-subtitle {
+      font-size: 12.5px;
+      color: var(--mid);
+      margin-top: 1px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--sidebar-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--mid);
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      background: #4CAF7D;
+      border-radius: 50%;
+    }
+
+    /* Messages */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      scroll-behavior: smooth;
+    }
+
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Welcome state */
+    .welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      opacity: 1;
+      transition: opacity 0.3s;
+    }
+
+    .welcome.hidden { display: none; }
+
+    .welcome-icon {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, var(--orange), var(--orange-light));
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 24px rgba(212,98,42,0.25);
+    }
+
+    .welcome-icon svg { width: 26px; height: 26px; fill: white; }
+
+    .welcome h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px;
+      font-weight: 400;
+      color: var(--charcoal);
+      margin-bottom: 10px;
+      letter-spacing: -0.4px;
+    }
+
+    .welcome p {
+      font-size: 14.5px;
+      color: var(--mid);
+      max-width: 380px;
+      line-height: 1.6;
+    }
+
+
+
+    /* Message bubbles */
+    .message {
+      display: flex;
+      gap: 12px;
+      animation: fadeUp 0.3s ease;
+      max-width: 760px;
+    }
+
+    .message.user {
+      flex-direction: row-reverse;
+      align-self: flex-end;
+    }
+
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .avatar.bot {
+      background: linear-gradient(135deg, var(--orange), var(--orange-light));
+      color: white;
+    }
+
+    .avatar.user-av {
+      background: var(--charcoal);
+      color: white;
+    }
+
+    .bubble {
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 14.5px;
+      line-height: 1.65;
+      max-width: 560px;
+      box-shadow: var(--shadow);
+    }
+
+    .message.bot .bubble {
+      background: white;
+      color: var(--charcoal);
+      border: 1px solid var(--border);
+      border-top-left-radius: 4px;
+    }
+
+    .message.user .bubble {
+      background: var(--orange);
+      color: white;
+      border-top-right-radius: 4px;
+    }
+
+    .citations {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .citation-tag {
+      padding: 3px 9px;
+      background: var(--sidebar-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--mid);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      padding: 14px 18px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      border-top-left-radius: 4px;
+      box-shadow: var(--shadow);
+    }
+
+    .typing-dots span {
+      width: 6px; height: 6px;
+      background: var(--orange-dim);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30%            { transform: translateY(-6px); background: var(--orange); }
+    }
+
+    /* Input area */
+    .input-area {
+      padding: 20px 32px 28px;
+      background: var(--warm-white);
+      border-top: 1px solid var(--border);
+    }
+
+    .input-wrapper {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 12px 12px 18px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(212,98,42,0.1);
+    }
+
+    #question {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 14.5px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--charcoal);
+      background: transparent;
+      resize: none;
+      min-height: 22px;
+      max-height: 120px;
+      line-height: 1.5;
+    }
+
+    #question::placeholder { color: #B8B0A8; }
+
+    .send-btn {
+      width: 36px; height: 36px;
+      background: var(--orange);
+      border: none;
+      border-radius: 9px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .send-btn:hover { background: #C0561F; }
+    .send-btn:active { transform: scale(0.93); }
+    .send-btn svg { width: 15px; height: 15px; fill: white; }
+
+    .input-hint {
+      font-size: 11.5px;
+      color: #C0B8B0;
+      margin-top: 8px;
+      padding-left: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <span class="logo-name">Archival</span>
+      </div>
+      <div class="logo-tagline">Document Intelligence</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Knowledge Base</div>
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        </div>
+        <div class="upload-text">Drop files here</div>
+        <div class="upload-sub">PDF, TXT, DOCX supported</div>
+        <input type="file" id="fileInput" accept=".pdf,.txt,.docx">
+      </div>
+      <button class="upload-btn" id="uploadBtn" onclick="uploadFile()">Index Document</button>
+      <div class="upload-status" id="uploadStatus"></div>
+    </div>
+
+    <div class="doc-list" id="docList">
+      <div class="section-label" style="margin-bottom:10px">Indexed Documents</div>
+      <div id="docItems" style="color:var(--mid);font-size:12.5px;text-align:center;padding:16px 0;">No documents yet</div>
+    </div>
+
+    <div class="memory-badge">
+      <div class="memory-dot"></div>
+      Memory active facts being learned
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="chat-header">
+      <div>
+        <div class="chat-title">Ask your documents</div>
+        <div class="chat-subtitle">Grounded answers with citations</div>
+      </div>
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        Ready
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <h2>What would you like to know?</h2>
+        <p>Please upload a document first to get grounded answers.</p>
+
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea id="question" rows="1" placeholder="Ask a question about your document"></textarea>
+        <button class="send-btn" onclick="ask()">
+          <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
+      <div class="input-hint">Don't forget to index your document first!</div>
+    </div>
+  </main>
+
+  <script>
+    // Auto-resize textarea
+    const textarea = document.getElementById('question');
+    textarea.addEventListener('input', () => {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    });
+    textarea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(); }
+    });
+
+    // Drag & drop
+    const zone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+
+    zone.addEventListener('click', () => fileInput.click());
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) {
+        fileInput.files = e.dataTransfer.files;
+        onFileSelected();
+      }
+    });
+
+    fileInput.addEventListener('change', onFileSelected);
+
+    function onFileSelected() {
+      const file = fileInput.files[0];
+      if (!file) return;
+      document.querySelector('.upload-text').textContent = file.name;
+      document.querySelector('.upload-sub').textContent = formatBytes(file.size);
+      document.getElementById('uploadBtn').classList.add('visible');
+    }
+
+    function formatBytes(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+      return (b/1048576).toFixed(1) + ' MB';
+    }
+
+    async function uploadFile() {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const status = document.getElementById('uploadStatus');
+      const btn = document.getElementById('uploadBtn');
+      btn.textContent = 'Indexing…';
+      btn.disabled = true;
+      status.textContent = '';
+      status.className = 'upload-status';
+
+      const form = new FormData();
+      form.append('file', file);
+      try {
+        const res = await fetch('/upload', { method: 'POST', body: form });
+        const data = await res.json();
+        if (data.error) {
+          status.textContent = data.error;
+          status.classList.add('error');
+        } else {
+          status.textContent = 'File Indexed successfully';
+          status.classList.add('success');
+          addDocToList(file.name, formatBytes(file.size));
+          document.querySelector('.upload-text').textContent = 'Drop files here';
+          document.querySelector('.upload-sub').textContent = 'PDF, TXT, DOCX supported';
+          btn.classList.remove('visible');
+        }
+      } catch {
+        status.textContent = 'Upload failed. Is the server running?';
+        status.classList.add('error');
+      }
+      btn.textContent = 'Index Document';
+      btn.disabled = false;
+    }
+
+    function addDocToList(name, size) {
+      const container = document.getElementById('docItems');
+      if (container.style.textAlign === 'center') {
+        container.innerHTML = '';
+        container.style = '';
+      }
+      const item = document.createElement('div');
+      item.className = 'doc-item';
+      item.innerHTML = `
+        <div class="doc-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div>
+          <div class="doc-name" title="${name}">${name}</div>
+          <div class="doc-size">${size}</div>
+        </div>`;
+      container.appendChild(item);
+    }
+
+    function useChip(el) {
+      textarea.value = el.textContent;
+      textarea.focus();
+    }
+
+    async function ask() {
+      const q = textarea.value.trim();
+      if (!q) return;
+
+      hideWelcome();
+      addMessage('user', q);
+      textarea.value = '';
+      textarea.style.height = 'auto';
+
+      const typingId = showTyping();
+
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: q })
+        });
+        const data = await res.json();
+        removeTyping(typingId);
+        addMessage('bot', data.answer, data.citations);
+      } catch {
+        removeTyping(typingId);
+        addMessage('bot', 'Something went wrong. Please check that the server is running.');
+      }
+    }
+
+    function hideWelcome() {
+      const w = document.getElementById('welcome');
+      if (w) w.classList.add('hidden');
+    }
+
+    function addMessage(role, text, citations = []) {
+      const messages = document.getElementById('messages');
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+
+      const avatar = document.createElement('div');
+      avatar.className = `avatar ${role === 'bot' ? 'bot' : 'user-av'}`;
+      avatar.textContent = role === 'bot' ? 'A' : 'U';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = text;
+
+      if (citations && citations.length && !citations[0].includes('general knowledge')) {
+        const citeDiv = document.createElement('div');
+        citeDiv.className = 'citations';
+        citations.forEach(c => {
+          const tag = document.createElement('span');
+          tag.className = 'citation-tag';
+          tag.textContent = c;
+          citeDiv.appendChild(tag);
+        });
+        bubble.appendChild(citeDiv);
+      }
+
+      div.appendChild(avatar);
+      div.appendChild(bubble);
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    let typingCounter = 0;
+    function showTyping() {
+      const id = ++typingCounter;
+      const messages = document.getElementById('messages');
+      const div = document.createElement('div');
+      div.className = 'typing-indicator';
+      div.id = `typing-${id}`;
+      div.innerHTML = `
+        <div class="avatar bot">A</div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>`;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+      return id;
+    }
+
+    function removeTyping(id) {
+      const el = document.getElementById(`typing-${id}`);
+      if (el) el.remove();
+    }
+  </script>
+</body>
+</html>

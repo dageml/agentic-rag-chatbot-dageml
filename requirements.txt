@@ -1,0 +1,7 @@
+chromadb>=0.5.0
+sentence-transformers
+huggingface_hub
+transformers
+python-dotenv
+numpy
+pypdf

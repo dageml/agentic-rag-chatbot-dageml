@@ -1,0 +1,7 @@
+Agentic RAG Chatbot Overview
+
+This chatbot allows users to upload documents and ask questions about them.
+
+The system uses embeddings to retrieve relevant document chunks and generate grounded answers with citations.
+
+It also stores persistent memory about users and reusable knowledge in markdown files.
