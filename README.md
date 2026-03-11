@@ -52,7 +52,7 @@ You may implement one feature or multiple. Partial implementations are acceptabl
 
 ---
 
-## What You Need To Build
+## What To Build
 
 ### Feature A - File Upload + RAG (Core)
 Users can:
@@ -93,21 +93,6 @@ Use an internal decision structure like:
 
 ---
 
-### Feature C - Safe Python Sandbox + Open-Meteo (Optional)
-Spin up a Python environment using llm-sandbox (or similar isolation) and allow the chatbot to execute an analysis task by calling a public time series API.
-
-Use this API (no key required): Open-Meteo (historical + forecast weather time series).
-
-- **https://open-meteo.com/**
-
-The Chatbot should:
-- Call Open-Meteo for a location/time range
-- Retrieve time series data
-- Compute basic analytics (rolling averages, volatility, missingness checks, anomaly flags, etc.)
-- Return a clear explanation of findings
-
-We care about **safe execution boundaries + clean tool interface**, not perfect data science.
-
 ---
 
 ## Deliverables (Required)
@@ -126,13 +111,8 @@ Your repo must include:
 
 ---
 
-## Submission Rules (Important)
-
-### 1) Any language / any stack
-You may use any language, framework, model, and any vector DB (FAISS/Chroma/pgvector/etc.).
-
-### 2) One universal judge command (Required)
-Judges must be able to run:
+### 2) One universal command (Required)
+Able to run:
 
 ```bash
 make sanity
@@ -155,95 +135,15 @@ bash scripts/sanity_check.sh
 
 (This script runs `make sanity` and validates the output format.)
 
-### 3) Video Walkthrough Link (Required)
+### 3) Video Walkthrough
 
-Add your video link here: https://www.loom.com/share/980416d69b32419787226f7be76459e6
+Video link: https://www.loom.com/share/980416d69b32419787226f7be76459e6
 
-## Video Walkthrough
 
-PASTE YOUR LINK HERE
+## Quick Start
 
-## 4) Important
-Submissions missing the Participant Info block may be deprioritized during review.
+Provide exact commands for a quick run.
 
----
-
-## GitHub Classroom Submission (Required)
-
-### Step 1 — Create your submission repo
-1) Open the **GitHub Classroom invite link** provided to you after registration.
-2) Accept the assignment.
-3) GitHub Classroom will automatically create a **new repository under your GitHub account**.
-   - This new repo is your official submission repo.
-
-Important:
-- Do **not** submit work in the **agentic-rag-chatbot-template** repository. That is the starter/template repo.
-- You must complete your work in the **repository created for you by GitHub Classroom** after you accept the assignment link.
-- Only the GitHub Classroom-created repo will be evaluated.
-
-### Step 2 — Work in your submission repo
-Clone your Classroom repo and push your commits as usual.
-
-### Step 3 — What you must include before the deadline
-In your Classroom repo:
-- Fill in the **Quick Start** section in `README.md` (exact run commands)
-- Paste your **Video Walkthrough** link in `README.md`
-- Ensure `make sanity` works and generates:
-  - `artifacts/sanity_output.json`
-- Ensure your app writes memory to:
-  - `USER_MEMORY.md`
-  - `COMPANY_MEMORY.md`
-
-### Step 4 — Final submission
-Your submission is automatic once your code is pushed to your Classroom repo.
-No separate zip upload is required unless explicitly instructed.
-
----
-
-## What We Evaluate
-
-We evaluate holistically:
-
-### Correctness & UX
-
-* RAG answers are grounded and cite sources
-* Graceful behavior when retrieval fails (no hallucinations)
-
-### Engineering Quality
-
-* Clean structure and modular design
-* Readable code and thoughtful naming
-* Error handling and reproducibility
-
-### Product Thinking
-
-* Sensible retrieval design
-* Thoughtful memory criteria
-* Clear tradeoffs explained in README/architecture
-
-### Security Mindset (Bonus)
-
-* Prompt-injection awareness in RAG
-* Sandbox isolation (if implementing Feature C)
-* Safe handling of external API calls
-
-## Nice-to-Haves (Optional)
-
-These are optional enhancements. They are not required, but can earn bonus points if implemented well:
-
-- Streaming responses
-- Conversation history view
-- Multi-user support
-- File management tools (re-index / delete / inspect chunks)
-- Simple evaluation harness with test questions and expected citations
-
----
-
-## Quick Start (YOU MUST FILL THIS IN)
-
-Provide exact commands a judge can run.
-
-Example (replace with your real commands):
 
 ```text
 # Install dependencies
